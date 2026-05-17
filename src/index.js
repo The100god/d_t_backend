@@ -16,8 +16,21 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: false, // To allow loading images from static folder
 }));
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://10.218.85.181:5173',
+  'http://10.218.85.181:5000'
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '2mb' })); // Increased slightly for drawing base64

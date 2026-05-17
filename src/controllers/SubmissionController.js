@@ -118,3 +118,114 @@ exports.gradeSubmission = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.deleteSubmission = async (req, res) => {
+  try {
+    const submissionId = req.params.id;
+    const submission = await Submission.findById(submissionId);
+    if (!submission) return res.status(404).json({ error: 'Submission not found' });
+
+    // Authorization: Only the student who submitted it OR an admin (teacher) can delete it
+    if (req.user.role !== 'admin' && submission.student.toString() !== req.user.userId) {
+      return res.status(403).json({ error: 'Unauthorized to delete this submission' });
+    }
+
+    await Submission.findByIdAndDelete(submissionId);
+    res.json({ message: 'Submission deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getAdminAllSubmissions = async (req, res) => {
+  try {
+    const adminId = req.user.userId;
+    const Quiz = require('../models/Quiz');
+    
+    // Get all quizzes created by this admin (including soft-deleted ones)
+    const quizzes = await Quiz.find({ creator: adminId });
+    const quizIds = quizzes.map(q => q._id);
+
+    // Get all submissions for these quizzes
+    const submissions = await Submission.find({ quiz: { $in: quizIds } })
+      .populate('quiz', 'title subject isDeleted')
+      .populate('student', 'email name studentClass stream');
+
+    res.json(submissions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.importSubmissionsCSV = async (req, res) => {
+  try {
+    const { submissions } = req.body;
+    if (!submissions || !Array.isArray(submissions)) {
+      return res.status(400).json({ error: 'Invalid or missing submissions array.' });
+    }
+
+    const User = require('../models/User');
+    const Quiz = require('../models/Quiz');
+
+    const importedSubmissions = [];
+
+    for (const item of submissions) {
+      const { studentName, studentEmail, quizTitle, subject, score, status } = item;
+      if (!studentEmail || !quizTitle) continue;
+
+      // Find or create student
+      let student = await User.findOne({ email: studentEmail.toLowerCase().trim() });
+      if (!student) {
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash('123456', 10);
+        student = new User({
+          email: studentEmail.toLowerCase().trim(),
+          password: hashedPassword,
+          name: studentName || studentEmail.split('@')[0],
+          role: 'student',
+        });
+        await student.save();
+      }
+
+      // Find or create quiz created by this teacher
+      let quiz = await Quiz.findOne({ 
+        title: { $regex: new RegExp(`^${quizTitle.trim()}$`, 'i') },
+        creator: req.user.userId
+      });
+
+      if (!quiz) {
+        quiz = new Quiz({
+          title: quizTitle.trim(),
+          subject: subject || 'General',
+          timeLimit: 30,
+          totalMarks: 100,
+          creator: req.user.userId,
+          isPublic: false,
+          isDeleted: true, // Mark as soft-deleted/archived
+          questions: [{
+            type: 'SHORT_ANSWER',
+            text: 'Imported Question',
+            marks: 100
+          }]
+        });
+        await quiz.save();
+      }
+
+      const parsedGained = parseFloat(score) || 0;
+      const submission = new Submission({
+        quiz: quiz._id,
+        student: student._id,
+        answers: [],
+        gainedMarks: parsedGained,
+        totalMarks: quiz.totalMarks || 100,
+        status: status || 'graded',
+      });
+      await submission.save();
+      importedSubmissions.push(submission);
+    }
+
+    res.json({ message: `Successfully imported ${importedSubmissions.length} student records!`, count: importedSubmissions.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

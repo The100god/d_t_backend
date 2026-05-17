@@ -43,6 +43,10 @@ const quizSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
   totalMarks: {
     type: Number,
     required: true,

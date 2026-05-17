@@ -16,7 +16,7 @@ exports.createQuiz = async (req, res) => {
 
 exports.getAllQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ isPublic: true }).select('title subject timeLimit creator');
+    const quizzes = await Quiz.find({ isPublic: true, isDeleted: { $ne: true } }).select('title subject timeLimit creator');
     res.json(quizzes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -46,7 +46,7 @@ exports.getQuizById = async (req, res) => {
 
 exports.getAdminQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ creator: req.user.userId });
+    const quizzes = await Quiz.find({ creator: req.user.userId, isDeleted: { $ne: true } });
     res.json(quizzes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -55,7 +55,11 @@ exports.getAdminQuizzes = async (req, res) => {
 
 exports.deleteQuiz = async (req, res) => {
   try {
-    const quiz = await Quiz.findOneAndDelete({ _id: req.params.id, creator: req.user.userId });
+    const quiz = await Quiz.findOneAndUpdate(
+      { _id: req.params.id, creator: req.user.userId },
+      { isDeleted: true },
+      { new: true }
+    );
     if (!quiz) return res.status(404).json({ error: 'Quiz not found or unauthorized' });
     res.json({ message: 'Quiz deleted' });
   } catch (err) {
@@ -82,7 +86,7 @@ exports.getAdminStats = async (req, res) => {
     const completionRate = totalSubmissions > 0 ? Math.round((gradedCount / totalSubmissions) * 100) : 0;
 
     res.json({
-      totalQuizzes: quizzes.length,
+      totalQuizzes: quizzes.filter(q => !q.isDeleted).length,
       totalParticipants: participants.size,
       completionRate,
       totalSubmissions
