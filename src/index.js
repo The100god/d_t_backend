@@ -9,6 +9,7 @@ const path = require('path');
 const authRoutes = require('./routes/authRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
+const mediaRoutes = require('./routes/mediaRoutes');
 
 const app = express();
 
@@ -18,9 +19,9 @@ app.use(helmet({
 }));
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  'http://localhost:5173',
-  'http://10.218.85.181:5173',
-  'http://10.218.85.181:5000'
+  'http://localhost:5174',
+  'http://[IP_ADDRESS]:5174',
+  'http://[IP_ADDRESS]:5000'
 ].filter(Boolean);
 
 app.use(cors({
@@ -51,6 +52,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/submissions', submissionRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK' }));

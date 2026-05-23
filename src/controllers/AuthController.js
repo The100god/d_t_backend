@@ -20,7 +20,7 @@ const generateTokens = (user) => {
 exports.register = async (req, res) => {
   try {
     const { email, password, role, name, studentClass, stream } = req.body;
-    
+
     // Restriction: Only one admin can register
     if (role === 'admin') {
       const adminExists = await User.findOne({ role: 'admin' });
@@ -33,9 +33,9 @@ exports.register = async (req, res) => {
     if (existingUser) return res.status(400).json({ error: 'User already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ 
-      email, 
-      password: hashedPassword, 
+    const user = new User({
+      email,
+      password: hashedPassword,
       role,
       name,
       studentClass: role === 'student' ? studentClass : undefined,
@@ -47,14 +47,14 @@ exports.register = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.status(201).json({ 
-      accessToken, 
-      refreshToken, 
-      user: { 
-        email: user.email, 
+    res.status(201).json({
+      accessToken,
+      refreshToken,
+      user: {
+        email: user.email,
         role: user.role,
-        name: user.name 
-      } 
+        name: user.name
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -74,14 +74,14 @@ exports.login = async (req, res) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    res.json({ 
-      accessToken, 
-      refreshToken, 
-      user: { 
-        email: user.email, 
+    res.json({
+      accessToken,
+      refreshToken,
+      user: {
+        email: user.email,
         role: user.role,
-        name: user.name 
-      } 
+        name: user.name
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -125,7 +125,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5174'}/reset-password?token=${token}`;
     console.log(`[PASSWORD RESET DEBUG] Reset URL for ${email}: ${resetUrl}`);
 
     const responsePayload = {

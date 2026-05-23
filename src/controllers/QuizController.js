@@ -33,7 +33,7 @@ exports.getQuizById = async (req, res) => {
     studentQuiz.questions = studentQuiz.questions.map(q => {
       const { correctAnswer, ...rest } = q;
       if (q.type === 'MCQ') {
-        rest.options = q.options.map(o => ({ text: o.text, _id: o._id }));
+        rest.options = q.options.map(o => ({ text: o.text, image: o.image, _id: o._id }));
       }
       return rest;
     });

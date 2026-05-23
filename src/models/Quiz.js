@@ -12,6 +12,7 @@ const questionSchema = new mongoose.Schema({
   },
   options: [{
     text: String,
+    image: String,
     isCorrect: Boolean,
   }], // For MCQ
   correctAnswer: {
