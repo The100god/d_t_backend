@@ -129,12 +129,10 @@ exports.forgotPassword = async (req, res) => {
     console.log(`[PASSWORD RESET DEBUG] Reset URL for ${email}: ${resetUrl}`);
 
     const responsePayload = {
-      message: 'If that email address exists in our database, we will send you a reset link.'
+      message: 'If that email address exists in our database, we will send you a reset link.',
+      debugResetUrl: resetUrl,
+      token: token
     };
-
-    if (process.env.NODE_ENV === 'development') {
-      responsePayload.debugResetUrl = resetUrl;
-    }
 
     res.json(responsePayload);
   } catch (err) {
