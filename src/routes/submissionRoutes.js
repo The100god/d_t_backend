@@ -9,7 +9,7 @@ const { uploadImage } = require('../utils/cloudinary');
 // Use memory storage for Cloudinary streaming uploads
 const memoryUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // 25MB limit
 });
 
 router.post('/', authMiddleware, SubmissionController.submitQuiz);
